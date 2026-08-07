@@ -10,6 +10,10 @@ import { createClient } from "@/lib/supabase/client";
 import {
   calculateWorkedMinutes,
 } from "@/lib/pay/calculations";
+import {
+  bankHolidayName,
+  isEnglandWalesBankHoliday,
+} from "@/lib/pay/bank-holidays";
 
 type Position = {
   id: string;
@@ -35,6 +39,8 @@ type Entry = {
   expense_amount: number | null;
   notes: string | null;
   title: string | null;
+  generates_extra_pay?: boolean;
+  is_bank_holiday?: boolean;
 };
 
 type Props = {
@@ -159,6 +165,20 @@ export function ActivityEditor({
   const [notes, setNotes] =
     useState(entry.notes ?? "");
 
+  const [
+    generatesExtraPay,
+    setGeneratesExtraPay,
+  ] = useState(
+    entry.generates_extra_pay ??
+      true,
+  );
+
+  const isBankHoliday =
+    isEnglandWalesBankHoliday(date);
+
+  const holidayName =
+    bankHolidayName(date);
+
   const [saving, setSaving] =
     useState(false);
 
@@ -180,6 +200,7 @@ export function ActivityEditor({
       return {
         rate: 0,
         disturbance: 0,
+        bankHolidayMultiplier: 2,
       };
     }
 
@@ -210,6 +231,7 @@ export function ActivityEditor({
       return {
         rate: 0,
         disturbance: 0,
+        bankHolidayMultiplier: 2,
       };
     }
 
@@ -273,6 +295,7 @@ export function ActivityEditor({
       const {
         rate,
         disturbance,
+        bankHolidayMultiplier,
       } = await getRate();
 
       if (!rate) {
@@ -284,12 +307,22 @@ export function ActivityEditor({
         return;
       }
 
-      rateOfPay = rate;
+      const effectiveRate =
+        entryType === "overtime" &&
+        isBankHoliday
+          ? rate *
+            (bankHolidayMultiplier ?? 2)
+          : rate;
+
+      rateOfPay = effectiveRate;
 
       calculatedPay =
-        (workedMinutes / 60) *
-          rate +
-        disturbance;
+        entryType === "call" &&
+        !generatesExtraPay
+          ? 0
+          : (workedMinutes / 60) *
+              effectiveRate +
+            disturbance;
     }
 
     const title =
@@ -331,20 +364,37 @@ export function ActivityEditor({
             calculatedPay.toFixed(2),
           ),
 
-        incident_number:
+        rate_multiplier:
+          entryType === "overtime" &&
+          isBankHoliday
+            ? 2
+            : 1,
+
+        generates_extra_pay:
           entryType === "call"
+            ? generatesExtraPay
+            : true,
+
+        is_bank_holiday:
+          isBankHoliday,
+
+        incident_number:
+          entryType === "call" ||
+          entryType === "overtime"
             ? incidentNumber.trim() ||
               null
             : null,
 
         incident_type:
-          entryType === "call"
+          entryType === "call" ||
+          entryType === "overtime"
             ? incidentType.trim() ||
               null
             : null,
 
         appliance:
-          entryType === "call"
+          entryType === "call" ||
+          entryType === "overtime"
             ? appliance.trim() ||
               null
             : null,
@@ -490,6 +540,18 @@ export function ActivityEditor({
         />
       </Field>
 
+      {isBankHoliday ? (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+          <p className="font-semibold text-amber-900">
+            Bank holiday
+          </p>
+
+          <p className="mt-1 text-sm text-amber-700">
+            This activity falls on {holidayName}.
+          </p>
+        </div>
+      ) : null}
+
       {timeBased ? (
         <>
           <div className="grid grid-cols-2 rounded-2xl bg-zinc-100 p-1">
@@ -590,6 +652,45 @@ export function ActivityEditor({
       ) : null}
 
       {entryType === "call" ? (
+        <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
+          <p className="font-semibold text-zinc-900">
+            Did this call generate extra pay?
+          </p>
+
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() =>
+                setGeneratesExtraPay(true)
+              }
+              className={`rounded-xl p-3 text-sm font-semibold ${
+                generatesExtraPay
+                  ? "bg-red-600 text-white"
+                  : "bg-white text-zinc-600"
+              }`}
+            >
+              Yes — extra pay
+            </button>
+
+            <button
+              type="button"
+              onClick={() =>
+                setGeneratesExtraPay(false)
+              }
+              className={`rounded-xl p-3 text-sm font-semibold ${
+                !generatesExtraPay
+                  ? "bg-zinc-950 text-white"
+                  : "bg-white text-zinc-600"
+              }`}
+            >
+              No — already paid
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      {entryType === "call" ||
+      entryType === "overtime" ? (
         <div className="space-y-4">
           <Field label="Incident number">
             <input

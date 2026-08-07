@@ -18,6 +18,10 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { getLondonDate } from "@/lib/date";
+import {
+  bankHolidayName,
+  isEnglandWalesBankHoliday,
+} from "@/lib/pay/bank-holidays";
 
 const entryTypes = [
   { value: "call", label: "Call", icon: Flame },
@@ -105,6 +109,14 @@ export function EntryForm({ initialType, positions }: Props) {
   const [notes, setNotes] = useState("");
   const [showOptional, setShowOptional] = useState(false);
 
+  const [generatesExtraPay, setGeneratesExtraPay] =
+    useState(true);
+
+  const [
+    bankHolidayMultiplier,
+    setBankHolidayMultiplier,
+  ] = useState(2);
+
   const [basicRate, setBasicRate] = useState<number | null>(null);
   const [overtimeRate, setOvertimeRate] = useState<number | null>(null);
   const [disturbanceRate, setDisturbanceRate] =
@@ -120,6 +132,53 @@ export function EntryForm({ initialType, positions }: Props) {
 
   const timeBased =
     entryType !== "mileage" && entryType !== "expense";
+
+  const isBankHoliday =
+    isEnglandWalesBankHoliday(activityDate);
+
+  const holidayName =
+    bankHolidayName(activityDate);
+
+  useEffect(() => {
+    if (entryType === "call") {
+      setGeneratesExtraPay(
+        selectedPosition?.employment_type ===
+          "on_call",
+      );
+    } else {
+      setGeneratesExtraPay(true);
+    }
+  }, [
+    entryType,
+    selectedPosition?.employment_type,
+  ]);
+
+  useEffect(() => {
+    async function loadPayPackage() {
+      if (!selectedPosition) {
+        setBankHolidayMultiplier(2);
+        return;
+      }
+
+      const { data } = await supabase
+        .from("position_pay_packages")
+        .select("bank_holiday_multiplier")
+        .eq(
+          "position_id",
+          selectedPosition.id,
+        )
+        .maybeSingle();
+
+      setBankHolidayMultiplier(
+        Number(
+          data?.bank_holiday_multiplier ??
+            2,
+        ),
+      );
+    }
+
+    loadPayPackage();
+  }, [selectedPosition, supabase]);
 
   const workedMinutes = useMemo(() => {
     if (!timeBased) return 0;
@@ -199,6 +258,15 @@ export function EntryForm({ initialType, positions }: Props) {
   const rateUsed =
     entryType === "overtime" ? overtimeRate : basicRate;
 
+  const effectiveRate =
+    rateUsed === null
+      ? null
+      : entryType === "overtime" &&
+          isBankHoliday
+        ? rateUsed *
+          bankHolidayMultiplier
+        : rateUsed;
+
   const estimatedPay = useMemo(() => {
     if (entryType === "mileage") {
       return Number(mileage || 0) * Number(mileageRate || 0);
@@ -208,12 +276,22 @@ export function EntryForm({ initialType, positions }: Props) {
       return Number(expenseAmount || 0);
     }
 
-    if (!rateUsed) return 0;
+    if (
+      entryType === "call" &&
+      !generatesExtraPay
+    ) {
+      return 0;
+    }
 
-    let amount = (workedMinutes / 60) * rateUsed;
+    if (!effectiveRate) return 0;
+
+    let amount =
+      (workedMinutes / 60) *
+      effectiveRate;
 
     if (
       entryType === "call" &&
+      generatesExtraPay &&
       selectedPosition?.employment_type === "on_call" &&
       disturbanceRate
     ) {
@@ -227,9 +305,11 @@ export function EntryForm({ initialType, positions }: Props) {
     mileageRate,
     expenseAmount,
     rateUsed,
+    effectiveRate,
     workedMinutes,
     selectedPosition,
     disturbanceRate,
+    generatesExtraPay,
   ]);
 
   async function saveEntry(
@@ -259,7 +339,14 @@ export function EntryForm({ initialType, positions }: Props) {
       return;
     }
 
-    if (timeBased && !rateUsed) {
+    if (
+      timeBased &&
+      !(
+        entryType === "call" &&
+        !generatesExtraPay
+      ) &&
+      !rateUsed
+    ) {
       setErrorMessage(
         "FirePay could not find a national pay rate for this position and date.",
       );
@@ -303,23 +390,45 @@ export function EntryForm({ initialType, positions }: Props) {
       break_minutes: 0,
       worked_minutes: timeBased ? workedMinutes : 0,
 
-      rate_of_pay: timeBased ? rateUsed : null,
-      rate_multiplier: 1,
+      rate_of_pay:
+        timeBased ? effectiveRate : null,
 
-      calculated_pay: Number(estimatedPay.toFixed(2)),
+      rate_multiplier:
+        entryType === "overtime" &&
+        isBankHoliday
+          ? bankHolidayMultiplier
+          : 1,
+
+      calculated_pay: Number(
+        estimatedPay.toFixed(2),
+      ),
+
+      generates_extra_pay:
+        entryType === "call"
+          ? generatesExtraPay
+          : true,
+
+      is_bank_holiday:
+        isBankHoliday,
 
       incident_number:
-        entryType === "call" && incidentNumber.trim()
+        (entryType === "call" ||
+          entryType === "overtime") &&
+        incidentNumber.trim()
           ? incidentNumber.trim()
           : null,
 
       incident_type:
-        entryType === "call" && incidentType.trim()
+        (entryType === "call" ||
+          entryType === "overtime") &&
+        incidentType.trim()
           ? incidentType.trim()
           : null,
 
       appliance:
-        entryType === "call" && appliance.trim()
+        (entryType === "call" ||
+          entryType === "overtime") &&
+        appliance.trim()
           ? appliance.trim()
           : null,
 
@@ -590,6 +699,49 @@ export function EntryForm({ initialType, positions }: Props) {
         ) : null}
 
         {entryType === "call" ? (
+          <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
+            <p className="font-semibold text-zinc-900">
+              Did this call generate extra pay?
+            </p>
+
+            <p className="mt-1 text-sm text-zinc-500">
+              Choose No if you attended while already being paid on a scheduled shift.
+            </p>
+
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() =>
+                  setGeneratesExtraPay(true)
+                }
+                className={`rounded-xl px-3 py-3 text-sm font-semibold ${
+                  generatesExtraPay
+                    ? "bg-red-600 text-white"
+                    : "bg-white text-zinc-600"
+                }`}
+              >
+                Yes — extra pay
+              </button>
+
+              <button
+                type="button"
+                onClick={() =>
+                  setGeneratesExtraPay(false)
+                }
+                className={`rounded-xl px-3 py-3 text-sm font-semibold ${
+                  !generatesExtraPay
+                    ? "bg-zinc-950 text-white"
+                    : "bg-white text-zinc-600"
+                }`}
+              >
+                No — already paid
+              </button>
+            </div>
+          </div>
+        ) : null}
+
+        {entryType === "call" ||
+        entryType === "overtime" ? (
           <div>
             <button
               type="button"
@@ -668,6 +820,23 @@ export function EntryForm({ initialType, positions }: Props) {
           </div>
         ) : null}
 
+        {isBankHoliday ? (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+            <p className="font-semibold text-amber-900">
+              Bank holiday detected
+            </p>
+
+            <p className="mt-1 text-sm text-amber-700">
+              {holidayName}
+              {entryType === "overtime"
+                ? ` • ${bankHolidayMultiplier.toFixed(
+                    2,
+                  )}× overtime multiplier`
+                : ""}
+            </p>
+          </div>
+        ) : null}
+
         <div className="rounded-[1.5rem] bg-zinc-950 p-5 text-white">
           <p className="text-sm text-zinc-400">
             Estimated earnings
@@ -683,8 +852,10 @@ export function EntryForm({ initialType, positions }: Props) {
             <p className="mt-2 text-sm text-zinc-400">
               {Math.floor(workedMinutes / 60)}h{" "}
               {workedMinutes % 60}m
-              {rateUsed
-                ? ` • £${rateUsed.toFixed(2)}/hr`
+              {effectiveRate
+                ? ` • £${effectiveRate.toFixed(
+                    2,
+                  )}/hr`
                 : ""}
               {entryType === "call" &&
               selectedPosition?.employment_type ===

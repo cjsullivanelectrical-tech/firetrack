@@ -655,6 +655,22 @@ export default async function HomePage() {
     },
   ).format(new Date());
 
+  const londonHour = Number(
+    new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Europe/London",
+      hour: "2-digit",
+      hour12: false,
+    }).format(new Date()),
+  );
+
+  const greeting =
+    londonHour < 12
+      ? "Good morning"
+      : londonHour < 18
+        ? "Good afternoon"
+        : "Good evening";
+
+
   return (
     <AppShell>
       <div className="space-y-8">
@@ -664,7 +680,7 @@ export default async function HomePage() {
           </p>
 
           <h1 className="mt-1 text-3xl font-bold tracking-tight text-zinc-950 sm:text-4xl">
-            Hello, {preferredName}
+            {greeting}, {preferredName}
           </h1>
 
           <p className="mt-2 text-sm text-zinc-500 sm:text-base">

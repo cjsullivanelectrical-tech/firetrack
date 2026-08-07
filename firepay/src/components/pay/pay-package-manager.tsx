@@ -43,6 +43,7 @@ type PayPackage = {
     | "custom";
 
   custom_retainer_annual?: number | null;
+  bank_holiday_multiplier?: number | null;
 };
 
 type Allowance = {
@@ -192,6 +193,17 @@ export function PayPackageManager({
           )
         : "",
     );
+
+  const [
+    bankHolidayMultiplier,
+    setBankHolidayMultiplier,
+  ] = useState(
+    String(
+      initialPayPackage
+        ?.bank_holiday_multiplier ??
+        2,
+    ),
+  );
 
   const [allowances, setAllowances] =
     useState(initialAllowances);
@@ -449,6 +461,11 @@ export function PayPackageManager({
         customRetainer
           ? Number(customRetainer)
           : null,
+
+      bank_holiday_multiplier:
+        Number(
+          bankHolidayMultiplier || 1,
+        ),
     };
 
     const { error: payError } = await supabase
@@ -1420,6 +1437,40 @@ export function PayPackageManager({
           </section>
         </>
       )}
+
+      <section className="rounded-[2rem] border border-zinc-200 bg-white p-5 shadow-sm sm:p-8">
+        <h2 className="text-xl font-bold text-zinc-950">
+          Bank holiday pay
+        </h2>
+
+        <p className="mt-1 text-sm text-zinc-500">
+          FirePay automatically spots England & Wales bank holidays. Set the multiplier your contract uses for overtime worked on one.
+        </p>
+
+        <div className="mt-5 max-w-xs">
+          <Field label="Bank holiday multiplier">
+            <input
+              type="number"
+              min="0"
+              max="5"
+              step="0.1"
+              value={
+                bankHolidayMultiplier
+              }
+              onChange={(event) =>
+                setBankHolidayMultiplier(
+                  event.target.value,
+                )
+              }
+              className="input"
+            />
+          </Field>
+
+          <p className="mt-2 text-xs text-zinc-400">
+            Example: 2.0 = double time.
+          </p>
+        </div>
+      </section>
 
       <section className="rounded-[2rem] border border-zinc-200 bg-white p-5 shadow-sm sm:p-8">
         <h2 className="text-xl font-bold text-zinc-950">
