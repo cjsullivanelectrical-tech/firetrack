@@ -324,6 +324,10 @@ function themeStyles(
         "bg-purple-700 text-white",
       standby:
         "bg-emerald-700 text-white",
+      leave:
+        "bg-violet-700 text-white",
+      sick:
+        "bg-rose-700 text-white",
       other:
         "bg-zinc-700 text-white",
       holiday:
@@ -343,6 +347,10 @@ function themeStyles(
         "bg-violet-100 text-violet-800",
       standby:
         "bg-emerald-100 text-emerald-800",
+      leave:
+        "bg-violet-100 text-violet-800",
+      sick:
+        "bg-rose-100 text-rose-800",
       other:
         "bg-zinc-100 text-zinc-700",
       holiday:
@@ -361,6 +369,10 @@ function themeStyles(
       "bg-purple-100 text-purple-800",
     standby:
       "bg-emerald-100 text-emerald-800",
+    leave:
+      "bg-violet-100 text-violet-800",
+    sick:
+      "bg-rose-100 text-rose-800",
     other:
       "bg-zinc-100 text-zinc-700",
     holiday:
@@ -393,6 +405,14 @@ function entryClass(
     return theme.standby;
   }
 
+  if (type === "annual_leave") {
+    return theme.leave;
+  }
+
+  if (type === "sick_leave") {
+    return theme.sick;
+  }
+
   return theme.other;
 }
 
@@ -417,6 +437,14 @@ function entryLabel(
 
   if (type === "standby") {
     return "Standby";
+  }
+
+  if (type === "annual_leave") {
+    return "Annual Leave";
+  }
+
+  if (type === "sick_leave") {
+    return "Sick Leave";
   }
 
   if (type === "mileage") {

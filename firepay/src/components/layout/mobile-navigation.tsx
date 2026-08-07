@@ -25,14 +25,14 @@ const navigationItems = [
     prominent: true,
   },
   {
-    label: "Reports",
+    label: "Earnings",
     icon: ChartNoAxesCombined,
     href: "/reports",
   },
   {
     label: "Profile",
     icon: CircleUserRound,
-    href: "/settings/positions",
+    href: "/settings/profile",
   },
 ];
 

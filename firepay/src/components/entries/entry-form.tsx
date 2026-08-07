@@ -5,11 +5,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Banknote,
+  CalendarDays,
   CarFront,
   ChevronDown,
   Clock3,
   Flame,
   GraduationCap,
+  HeartPulse,
   PoundSterling,
   Radio,
   Save,
@@ -29,6 +31,16 @@ const entryTypes = [
   { value: "drill", label: "Drill", icon: GraduationCap },
   { value: "course", label: "Course", icon: GraduationCap },
   { value: "standby", label: "Standby", icon: Radio },
+  {
+    value: "annual_leave",
+    label: "Annual Leave",
+    icon: CalendarDays,
+  },
+  {
+    value: "sick_leave",
+    label: "Sick Leave",
+    icon: HeartPulse,
+  },
   { value: "mileage", label: "Mileage", icon: CarFront },
   { value: "expense", label: "Expense", icon: PoundSterling },
   { value: "other", label: "Other", icon: Shapes },
@@ -131,7 +143,14 @@ export function EntryForm({ initialType, positions }: Props) {
   );
 
   const timeBased =
-    entryType !== "mileage" && entryType !== "expense";
+    entryType !== "mileage" &&
+    entryType !== "expense" &&
+    entryType !== "annual_leave" &&
+    entryType !== "sick_leave";
+
+  const dayStatus =
+    entryType === "annual_leave" ||
+    entryType === "sick_leave";
 
   const isBankHoliday =
     isEnglandWalesBankHoliday(activityDate);
@@ -276,6 +295,10 @@ export function EntryForm({ initialType, positions }: Props) {
       return Number(expenseAmount || 0);
     }
 
+    if (dayStatus) {
+      return 0;
+    }
+
     if (
       entryType === "call" &&
       !generatesExtraPay
@@ -310,6 +333,7 @@ export function EntryForm({ initialType, positions }: Props) {
     selectedPosition,
     disturbanceRate,
     generatesExtraPay,
+    dayStatus,
   ]);
 
   async function saveEntry(
@@ -404,9 +428,11 @@ export function EntryForm({ initialType, positions }: Props) {
       ),
 
       generates_extra_pay:
-        entryType === "call"
-          ? generatesExtraPay
-          : true,
+        dayStatus
+          ? false
+          : entryType === "call"
+            ? generatesExtraPay
+            : true,
 
       is_bank_holiday:
         isBankHoliday,
@@ -817,6 +843,30 @@ export function EntryForm({ initialType, positions }: Props) {
         {errorMessage ? (
           <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700">
             {errorMessage}
+          </div>
+        ) : null}
+
+        {entryType === "annual_leave" ? (
+          <div className="rounded-2xl border border-violet-200 bg-violet-50 p-4">
+            <p className="font-semibold text-violet-900">
+              Annual Leave
+            </p>
+
+            <p className="mt-1 text-sm leading-6 text-violet-700">
+              FirePay will mark this day as leave. This does not add extra earnings — any normal scheduled rota pay remains part of the day's base pay.
+            </p>
+          </div>
+        ) : null}
+
+        {entryType === "sick_leave" ? (
+          <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4">
+            <p className="font-semibold text-rose-900">
+              Sick Leave
+            </p>
+
+            <p className="mt-1 text-sm leading-6 text-rose-700">
+              FirePay will record that you were off sick. For this beta it does not attempt to model brigade-specific sick-pay reductions.
+            </p>
           </div>
         ) : null}
 

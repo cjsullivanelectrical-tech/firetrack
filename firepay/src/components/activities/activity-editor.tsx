@@ -54,6 +54,8 @@ const types = [
   ["drill", "Drill Night"],
   ["course", "Course"],
   ["standby", "Standby"],
+  ["annual_leave", "Annual Leave"],
+  ["sick_leave", "Sick Leave"],
   ["mileage", "Mileage"],
   ["expense", "Expense"],
   ["other", "Other"],
@@ -187,7 +189,13 @@ export function ActivityEditor({
 
   const timeBased =
     entryType !== "mileage" &&
-    entryType !== "expense";
+    entryType !== "expense" &&
+    entryType !== "annual_leave" &&
+    entryType !== "sick_leave";
+
+  const dayStatus =
+    entryType === "annual_leave" ||
+    entryType === "sick_leave";
 
   async function getRate() {
     const position =
@@ -278,6 +286,10 @@ export function ActivityEditor({
       calculatedPay = Number(
         expenseAmount || 0,
       );
+    } else if (dayStatus) {
+      workedMinutes = 0;
+      calculatedPay = 0;
+      rateOfPay = null;
     } else {
       workedMinutes = useTimes
         ? calculateWorkedMinutes(
@@ -371,9 +383,11 @@ export function ActivityEditor({
             : 1,
 
         generates_extra_pay:
-          entryType === "call"
-            ? generatesExtraPay
-            : true,
+          dayStatus
+            ? false
+            : entryType === "call"
+              ? generatesExtraPay
+              : true,
 
         is_bank_holiday:
           isBankHoliday,
@@ -539,6 +553,30 @@ export function ActivityEditor({
           className="input"
         />
       </Field>
+
+      {entryType === "annual_leave" ? (
+        <div className="rounded-2xl border border-violet-200 bg-violet-50 p-4">
+          <p className="font-semibold text-violet-900">
+            Annual Leave
+          </p>
+
+          <p className="mt-1 text-sm text-violet-700">
+            This records the day as leave without adding extra pay.
+          </p>
+        </div>
+      ) : null}
+
+      {entryType === "sick_leave" ? (
+        <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4">
+          <p className="font-semibold text-rose-900">
+            Sick Leave
+          </p>
+
+          <p className="mt-1 text-sm text-rose-700">
+            This records sickness without applying any brigade-specific sick-pay reduction.
+          </p>
+        </div>
+      ) : null}
 
       {isBankHoliday ? (
         <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">

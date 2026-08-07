@@ -2,11 +2,13 @@ import Link from "next/link";
 import {
   ArrowLeft,
   Banknote,
+  CalendarDays,
   CarFront,
   ChevronRight,
   Clock3,
   Flame,
   GraduationCap,
+  HeartPulse,
   PoundSterling,
   Radio,
   Shapes,
@@ -20,6 +22,8 @@ const icons = {
   drill: GraduationCap,
   course: GraduationCap,
   standby: Radio,
+  annual_leave: CalendarDays,
+  sick_leave: HeartPulse,
   mileage: CarFront,
   expense: PoundSterling,
   other: Shapes,
@@ -28,6 +32,8 @@ const icons = {
 function titleForType(type: string) {
   if (type === "call") return "Fire Call";
   if (type === "drill") return "Drill Night";
+  if (type === "annual_leave") return "Annual Leave";
+  if (type === "sick_leave") return "Sick Leave";
 
   return (
     type.charAt(0).toUpperCase() +

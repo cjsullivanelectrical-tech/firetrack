@@ -281,6 +281,8 @@ function sumActivities(
 function activityName(type: string) {
   if (type === "call") return "Fire Call";
   if (type === "drill") return "Drill Night";
+  if (type === "annual_leave") return "Annual Leave";
+  if (type === "sick_leave") return "Sick Leave";
 
   return (
     type.charAt(0).toUpperCase() +
