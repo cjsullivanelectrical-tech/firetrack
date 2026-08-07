@@ -10,7 +10,6 @@ import {
 import { redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
-import { DeveloperUnlock } from "@/components/developer/developer-unlock";
 
 export default async function SettingsPage() {
   const supabase =
@@ -89,7 +88,15 @@ export default async function SettingsPage() {
             iconClass="bg-emerald-50 text-emerald-600"
           />
 
-          <DeveloperUnlock />
+          <div className="rounded-[1.5rem] border border-amber-200 bg-amber-50 p-5">
+            <p className="font-semibold text-amber-900">
+              FirePay Beta
+            </p>
+
+            <p className="mt-2 text-sm leading-6 text-amber-800">
+              FirePay is currently being tested. Pay figures are estimates and should always be checked against your official payslip and your fire service&apos;s payroll rules.
+            </p>
+          </div>
         </div>
       </div>
     </main>
