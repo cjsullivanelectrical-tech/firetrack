@@ -1,9 +1,11 @@
 import Link from "next/link";
 import {
   ArrowLeft,
+  CalendarDays,
   ChevronRight,
   CircleUserRound,
   Settings,
+  UserRound,
 } from "lucide-react";
 import { redirect } from "next/navigation";
 
@@ -47,6 +49,51 @@ export default async function SettingsPage() {
         </div>
 
         <div className="mt-8 space-y-4">
+          <Link
+            href="/settings/profile"
+            className="flex items-center justify-between gap-4 rounded-[1.75rem] border border-zinc-200 bg-white p-5 shadow-sm transition hover:border-zinc-300"
+          >
+            <div className="flex items-center gap-4">
+              <div className="flex size-11 items-center justify-center rounded-2xl bg-red-50 text-red-600">
+                <UserRound className="size-5" />
+              </div>
+
+              <div>
+                <p className="font-bold text-zinc-950">
+                  Profile
+                </p>
+
+                <p className="mt-1 text-sm text-zinc-500">
+                  Name, preferred name and account details
+                </p>
+              </div>
+            </div>
+
+            <ChevronRight className="size-5 text-zinc-300" />
+          </Link>
+          <Link
+            href="/settings/calendar"
+            className="flex items-center justify-between gap-4 rounded-[1.75rem] border border-zinc-200 bg-white p-5 shadow-sm transition hover:border-zinc-300"
+          >
+            <div className="flex items-center gap-4">
+              <div className="flex size-11 items-center justify-center rounded-2xl bg-amber-50 text-amber-600">
+                <CalendarDays className="size-5" />
+              </div>
+
+              <div>
+                <p className="font-bold text-zinc-950">
+                  Calendar appearance
+                </p>
+
+                <p className="mt-1 text-sm text-zinc-500">
+                  Colours and calendar style
+                </p>
+              </div>
+            </div>
+
+            <ChevronRight className="size-5 text-zinc-300" />
+          </Link>
+
           <Link
             href="/settings/positions"
             className="flex items-center justify-between gap-4 rounded-[1.75rem] border border-zinc-200 bg-white p-5 shadow-sm transition hover:border-zinc-300"

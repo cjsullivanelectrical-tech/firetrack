@@ -4,7 +4,6 @@ import {
   BriefcaseBusiness,
   ChevronLeft,
   ChevronRight,
-  Circle,
   Clock3,
   Flame,
   GraduationCap,
@@ -29,6 +28,11 @@ type Props = {
     month?: string;
   }>;
 };
+
+type Theme =
+  | "classic"
+  | "muted"
+  | "high_contrast";
 
 type Entry = {
   id: string;
@@ -75,7 +79,7 @@ type Shift = {
   durationMinutes: number;
 };
 
-function getCurrentMonth() {
+function currentMonth() {
   const parts =
     new Intl.DateTimeFormat(
       "en-GB",
@@ -85,9 +89,7 @@ function getCurrentMonth() {
         year: "numeric",
         month: "2-digit",
       },
-    ).formatToParts(
-      new Date(),
-    );
+    ).formatToParts(new Date());
 
   const values =
     Object.fromEntries(
@@ -107,6 +109,36 @@ function getCurrentMonth() {
     year: Number(values.year),
     month: Number(values.month),
   };
+}
+
+function londonToday() {
+  const parts =
+    new Intl.DateTimeFormat(
+      "en-GB",
+      {
+        timeZone:
+          "Europe/London",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      },
+    ).formatToParts(new Date());
+
+  const values =
+    Object.fromEntries(
+      parts
+        .filter(
+          (part) =>
+            part.type !==
+            "literal",
+        )
+        .map((part) => [
+          part.type,
+          part.value,
+        ]),
+    );
+
+  return `${values.year}-${values.month}-${values.day}`;
 }
 
 function isoDate(
@@ -135,112 +167,14 @@ function moveMonth(
   );
 
   return {
-    year: date.getUTCFullYear(),
+    year:
+      date.getUTCFullYear(),
     month:
       date.getUTCMonth() + 1,
   };
 }
 
-function getLondonToday() {
-  const parts =
-    new Intl.DateTimeFormat(
-      "en-GB",
-      {
-        timeZone:
-          "Europe/London",
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-      },
-    ).formatToParts(
-      new Date(),
-    );
-
-  const values =
-    Object.fromEntries(
-      parts
-        .filter(
-          (part) =>
-            part.type !==
-            "literal",
-        )
-        .map((part) => [
-          part.type,
-          part.value,
-        ]),
-    );
-
-  return `${values.year}-${values.month}-${values.day}`;
-}
-
-function activityLabel(
-  type: string,
-) {
-  switch (type) {
-    case "call":
-      return "Call";
-
-    case "overtime":
-      return "Overtime";
-
-    case "drill":
-      return "Drill";
-
-    case "course":
-      return "Course";
-
-    case "standby":
-      return "Standby";
-
-    case "mileage":
-      return "Mileage";
-
-    case "expense":
-      return "Expense";
-
-    default:
-      return "Other";
-  }
-}
-
-function ActivityIcon({
-  type,
-}: {
-  type: string;
-}) {
-  if (type === "call") {
-    return (
-      <Flame className="size-3.5" />
-    );
-  }
-
-  if (type === "overtime") {
-    return (
-      <Clock3 className="size-3.5" />
-    );
-  }
-
-  if (
-    type === "drill" ||
-    type === "course"
-  ) {
-    return (
-      <GraduationCap className="size-3.5" />
-    );
-  }
-
-  if (type === "standby") {
-    return (
-      <Radio className="size-3.5" />
-    );
-  }
-
-  return (
-    <Circle className="size-3" />
-  );
-}
-
-function getShift(
+function shiftForDate(
   position: Position,
   pattern:
     | RotaPattern
@@ -273,8 +207,7 @@ function getShift(
       Array.isArray(
         pattern.rdo_sequence,
       ) &&
-      pattern.rdo_sequence
-        .length
+      pattern.rdo_sequence.length
         ? pattern.rdo_sequence
         : [1, 2, 3, 4, 5];
 
@@ -289,7 +222,7 @@ function getShift(
         difference / 7,
       );
 
-    const sequenceIndex =
+    const index =
       ((week %
         sequence.length) +
         sequence.length) %
@@ -298,9 +231,7 @@ function getShift(
     if (
       weekday ===
       Number(
-        sequence[
-          sequenceIndex
-        ],
+        sequence[index],
       )
     ) {
       return null;
@@ -312,7 +243,7 @@ function getShift(
       positionLabel:
         position.label,
       label:
-        "Scheduled shift",
+        "Whole-time shift",
       startTime:
         pattern.weekly_start_time,
       durationMinutes:
@@ -323,7 +254,7 @@ function getShift(
     };
   }
 
-  const index =
+  const dayIndex =
     getRotaDayIndex(
       pattern.anchor_date,
       date,
@@ -335,7 +266,8 @@ function getShift(
       (day) =>
         day.rota_pattern_id ===
           pattern.id &&
-        day.day_index === index,
+        day.day_index ===
+          dayIndex,
     );
 
   if (!rotaDay?.is_working) {
@@ -349,7 +281,7 @@ function getShift(
       position.label,
     label:
       rotaDay.label ||
-      "Shift",
+      "Whole-time shift",
     startTime:
       rotaDay.start_time,
     durationMinutes:
@@ -360,22 +292,173 @@ function getShift(
   };
 }
 
-function shiftDuration(
+function durationText(
   minutes: number,
 ) {
   const hours =
-    Math.floor(
-      minutes / 60,
-    );
+    Math.floor(minutes / 60);
 
   const mins =
     minutes % 60;
 
-  if (!mins) {
-    return `${hours}h`;
+  return mins
+    ? `${hours}h ${mins}m`
+    : `${hours}h`;
+}
+
+function themeStyles(
+  theme: Theme,
+) {
+  if (
+    theme ===
+    "high_contrast"
+  ) {
+    return {
+      shift:
+        "bg-blue-700 text-white",
+      call:
+        "bg-red-700 text-white",
+      overtime:
+        "bg-amber-500 text-zinc-950",
+      training:
+        "bg-purple-700 text-white",
+      standby:
+        "bg-emerald-700 text-white",
+      other:
+        "bg-zinc-700 text-white",
+      holiday:
+        "bg-yellow-400 text-zinc-950",
+    };
   }
 
-  return `${hours}h ${mins}m`;
+  if (theme === "muted") {
+    return {
+      shift:
+        "bg-sky-100 text-sky-800",
+      call:
+        "bg-rose-100 text-rose-800",
+      overtime:
+        "bg-orange-100 text-orange-800",
+      training:
+        "bg-violet-100 text-violet-800",
+      standby:
+        "bg-emerald-100 text-emerald-800",
+      other:
+        "bg-zinc-100 text-zinc-700",
+      holiday:
+        "bg-yellow-100 text-yellow-800",
+    };
+  }
+
+  return {
+    shift:
+      "bg-blue-100 text-blue-800",
+    call:
+      "bg-red-100 text-red-800",
+    overtime:
+      "bg-amber-100 text-amber-800",
+    training:
+      "bg-purple-100 text-purple-800",
+    standby:
+      "bg-emerald-100 text-emerald-800",
+    other:
+      "bg-zinc-100 text-zinc-700",
+    holiday:
+      "bg-yellow-100 text-yellow-800",
+  };
+}
+
+function entryClass(
+  type: string,
+  theme: ReturnType<
+    typeof themeStyles
+  >,
+) {
+  if (type === "call") {
+    return theme.call;
+  }
+
+  if (type === "overtime") {
+    return theme.overtime;
+  }
+
+  if (
+    type === "drill" ||
+    type === "course"
+  ) {
+    return theme.training;
+  }
+
+  if (type === "standby") {
+    return theme.standby;
+  }
+
+  return theme.other;
+}
+
+function entryLabel(
+  type: string,
+) {
+  if (type === "call") {
+    return "Fire call";
+  }
+
+  if (type === "overtime") {
+    return "Overtime";
+  }
+
+  if (type === "drill") {
+    return "Drill";
+  }
+
+  if (type === "course") {
+    return "Course";
+  }
+
+  if (type === "standby") {
+    return "Standby";
+  }
+
+  if (type === "mileage") {
+    return "Mileage";
+  }
+
+  if (type === "expense") {
+    return "Expense";
+  }
+
+  return "Other";
+}
+
+function EntryIcon({
+  type,
+}: {
+  type: string;
+}) {
+  if (type === "call") {
+    return (
+      <Flame className="size-3.5" />
+    );
+  }
+
+  if (type === "overtime") {
+    return (
+      <Clock3 className="size-3.5" />
+    );
+  }
+
+  if (
+    type === "drill" ||
+    type === "course"
+  ) {
+    return (
+      <GraduationCap className="size-3.5" />
+    );
+  }
+
+  return (
+    <Radio className="size-3.5" />
+  );
 }
 
 export default async function CalendarPage({
@@ -385,7 +468,7 @@ export default async function CalendarPage({
     await searchParams;
 
   const current =
-    getCurrentMonth();
+    currentMonth();
 
   const year =
     Number(params.year) ||
@@ -432,6 +515,7 @@ export default async function CalendarPage({
     entriesResult,
     positionsResult,
     patternsResult,
+    profileResult,
   ] = await Promise.all([
     supabase
       .from("entries")
@@ -480,6 +564,14 @@ export default async function CalendarPage({
         "user_id",
         user.id,
       ),
+
+    supabase
+      .from("profiles")
+      .select(
+        "calendar_theme",
+      )
+      .eq("id", user.id)
+      .maybeSingle(),
   ]);
 
   const entries =
@@ -493,6 +585,22 @@ export default async function CalendarPage({
   const patterns =
     (patternsResult.data ??
       []) as RotaPattern[];
+
+  const rawTheme =
+    profileResult.data
+      ?.calendar_theme;
+
+  const calendarTheme: Theme =
+    rawTheme === "muted" ||
+    rawTheme ===
+      "high_contrast"
+      ? rawTheme
+      : "classic";
+
+  const colours =
+    themeStyles(
+      calendarTheme,
+    );
 
   const patternIds =
     patterns.map(
@@ -508,9 +616,7 @@ export default async function CalendarPage({
   ) {
     const { data } =
       await supabase
-        .from(
-          "rota_days",
-        )
+        .from("rota_days")
         .select(
           "rota_pattern_id,day_index,label,is_working,start_time,duration_minutes",
         )
@@ -571,7 +677,7 @@ export default async function CalendarPage({
     );
 
   const today =
-    getLondonToday();
+    londonToday();
 
   const monthTotal =
     entries.reduce(
@@ -586,7 +692,7 @@ export default async function CalendarPage({
 
   return (
     <main className="min-h-screen bg-zinc-100 px-4 py-6 sm:py-10">
-      <div className="mx-auto max-w-6xl">
+      <div className="mx-auto max-w-7xl">
         <Link
           href="/"
           className="inline-flex items-center gap-2 text-sm font-semibold text-zinc-600"
@@ -595,25 +701,33 @@ export default async function CalendarPage({
           Dashboard
         </Link>
 
-        <div className="mt-6 flex items-end justify-between gap-4">
+        <div className="mt-6 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-sm font-semibold text-red-600">
               Calendar
             </p>
 
-            <h1 className="mt-1 text-3xl font-bold tracking-tight text-zinc-950">
+            <h1 className="mt-1 text-3xl font-bold tracking-tight text-zinc-950 sm:text-4xl">
               {monthTitle}
             </h1>
 
             <p className="mt-2 text-sm text-zinc-500">
-              Your rota, activities and earnings in one place.
+              Your rota, incidents and extra earnings.
             </p>
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
+            <Link
+              href="/settings/calendar"
+              className="mr-2 rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm font-semibold text-zinc-700 shadow-sm"
+            >
+              Appearance
+            </Link>
+
             <Link
               href={`/calendar?year=${previous.year}&month=${previous.month}`}
               className="flex size-11 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-700 shadow-sm"
+              aria-label="Previous month"
             >
               <ChevronLeft className="size-5" />
             </Link>
@@ -621,37 +735,48 @@ export default async function CalendarPage({
             <Link
               href={`/calendar?year=${next.year}&month=${next.month}`}
               className="flex size-11 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-700 shadow-sm"
+              aria-label="Next month"
             >
               <ChevronRight className="size-5" />
             </Link>
           </div>
         </div>
 
-        <div className="mt-6 rounded-[1.5rem] border border-zinc-200 bg-white p-5 shadow-sm">
-          <p className="text-sm font-medium text-zinc-500">
-            Recorded extras this month
-          </p>
+        <div className="mt-6 flex items-center justify-between rounded-[1.5rem] border border-zinc-200 bg-white px-5 py-4 shadow-sm">
+          <div>
+            <p className="text-sm text-zinc-500">
+              Recorded extras this month
+            </p>
 
-          <div className="mt-1 flex items-end justify-between gap-4">
-            <p className="text-3xl font-bold tracking-tight text-zinc-950">
+            <p className="mt-1 text-2xl font-bold text-zinc-950">
               £
               {monthTotal.toFixed(
                 2,
               )}
             </p>
+          </div>
 
-            <p className="text-sm font-semibold text-zinc-500">
+          <div className="text-right">
+            <p className="text-sm font-semibold text-zinc-700">
               {entries.length}{" "}
               {entries.length === 1
                 ? "activity"
                 : "activities"}
             </p>
+
+            <p className="mt-1 text-xs capitalize text-zinc-400">
+              {calendarTheme.replaceAll(
+                "_",
+                " ",
+              )}{" "}
+              theme
+            </p>
           </div>
         </div>
 
         <div className="mt-6 overflow-x-auto pb-3">
-          <section className="min-w-[950px] overflow-hidden rounded-[1.5rem] border-2 border-zinc-300 bg-white">
-            <div className="grid grid-cols-7 border-b-2 border-zinc-300 bg-zinc-100">
+          <section className="min-w-[980px] overflow-hidden rounded-[1.75rem] border border-zinc-300 bg-white shadow-sm">
+            <div className="grid grid-cols-7 border-b border-zinc-300 bg-zinc-50">
               {[
                 "Monday",
                 "Tuesday",
@@ -660,16 +785,14 @@ export default async function CalendarPage({
                 "Friday",
                 "Saturday",
                 "Sunday",
-              ].map(
-                (day) => (
-                  <div
-                    key={day}
-                    className="border-r border-zinc-300 px-3 py-3 text-center text-sm font-bold text-zinc-700 last:border-r-0"
-                  >
-                    {day}
-                  </div>
-                ),
-              )}
+              ].map((day) => (
+                <div
+                  key={day}
+                  className="border-r border-zinc-200 px-3 py-3 text-center text-xs font-bold uppercase tracking-wide text-zinc-500 last:border-r-0"
+                >
+                  {day}
+                </div>
+              ))}
             </div>
 
             <div className="grid grid-cols-7">
@@ -680,7 +803,7 @@ export default async function CalendarPage({
                 (_, index) => (
                   <div
                     key={`blank-${index}`}
-                    className="min-h-52 border-b border-r border-zinc-300 bg-zinc-50"
+                    className="min-h-56 border-b border-r border-zinc-200 bg-zinc-50/60"
                   />
                 ),
               )}
@@ -707,21 +830,7 @@ export default async function CalendarPage({
                         date,
                     );
 
-                  const dayPay =
-                    dayEntries.reduce(
-                      (
-                        sum,
-                        entry,
-                      ) =>
-                        sum +
-                        Number(
-                          entry.calculated_pay ??
-                            0,
-                        ),
-                      0,
-                    );
-
-                  const wholeTimePositions =
+                  const wholeTime =
                     positions.filter(
                       (position) =>
                         position.employment_type ===
@@ -729,12 +838,12 @@ export default async function CalendarPage({
                     );
 
                   const shifts =
-                    wholeTimePositions
+                    wholeTime
                       .map(
                         (
                           position,
                         ) =>
-                          getShift(
+                          shiftForDate(
                             position,
                             patterns.find(
                               (
@@ -762,16 +871,29 @@ export default async function CalendarPage({
                     );
 
                   const isToday =
-                    date ===
-                    today;
+                    date === today;
+
+                  const dayPay =
+                    dayEntries.reduce(
+                      (
+                        total,
+                        entry,
+                      ) =>
+                        total +
+                        Number(
+                          entry.calculated_pay ??
+                            0,
+                        ),
+                      0,
+                    );
 
                   return (
                     <Link
                       key={date}
                       href={`/day/${date}`}
-                      className={`group flex min-h-52 flex-col border-b border-r border-zinc-300 p-3 transition ${
+                      className={`group relative flex min-h-56 flex-col border-b border-r border-zinc-200 p-3 transition ${
                         isToday
-                          ? "bg-red-50"
+                          ? "z-10 -m-px border-2 border-red-500 bg-white shadow-md"
                           : "bg-white hover:bg-zinc-50"
                       }`}
                     >
@@ -788,12 +910,10 @@ export default async function CalendarPage({
 
                         {holiday ? (
                           <span
-                            title={
-                              holiday
-                            }
-                            className="flex size-7 items-center justify-center rounded-full bg-amber-100 text-amber-700"
+                            className={`flex size-8 items-center justify-center rounded-full ${colours.holiday}`}
+                            title={holiday}
                           >
-                            <Star className="size-3.5" />
+                            <Star className="size-4" />
                           </span>
                         ) : null}
                       </div>
@@ -805,22 +925,24 @@ export default async function CalendarPage({
                           ) => (
                             <div
                               key={`${shift.positionId}-${date}`}
-                              className="rounded-lg bg-blue-50 px-2 py-2 text-blue-700"
+                              className={`rounded-xl px-2.5 py-2 ${colours.shift}`}
                             >
-                              <div className="flex items-center gap-1.5 text-xs font-bold">
+                              <div className="flex items-center gap-1.5 text-[11px] font-bold">
                                 <BriefcaseBusiness className="size-3.5" />
 
-                                {shift.label}
+                                <span className="truncate">
+                                  {shift.label}
+                                </span>
                               </div>
 
-                              <p className="mt-1 text-[10px] font-medium">
+                              <p className="mt-1 text-[10px] font-medium opacity-75">
                                 {shift.startTime
                                   ? `${shift.startTime.slice(
                                       0,
                                       5,
                                     )} • `
                                   : ""}
-                                {shiftDuration(
+                                {durationText(
                                   shift.durationMinutes,
                                 )}
                               </p>
@@ -831,7 +953,7 @@ export default async function CalendarPage({
                         {dayEntries
                           .slice(
                             0,
-                            3,
+                            4,
                           )
                           .map(
                             (
@@ -841,16 +963,19 @@ export default async function CalendarPage({
                                 key={
                                   entry.id
                                 }
-                                className="flex items-center gap-2 text-xs font-semibold text-zinc-600"
+                                className={`flex items-center gap-1.5 rounded-xl px-2.5 py-2 text-[11px] font-bold ${entryClass(
+                                  entry.entry_type,
+                                  colours,
+                                )}`}
                               >
-                                <ActivityIcon
+                                <EntryIcon
                                   type={
                                     entry.entry_type
                                   }
                                 />
 
                                 <span className="truncate">
-                                  {activityLabel(
+                                  {entryLabel(
                                     entry.entry_type,
                                   )}
                                 </span>
@@ -859,11 +984,11 @@ export default async function CalendarPage({
                           )}
 
                         {dayEntries.length >
-                        3 ? (
-                          <p className="text-xs font-medium text-zinc-400">
+                        4 ? (
+                          <p className="px-1 text-[10px] font-semibold text-zinc-400">
                             +
                             {dayEntries.length -
-                              3}{" "}
+                              4}{" "}
                             more
                           </p>
                         ) : null}
@@ -875,17 +1000,31 @@ export default async function CalendarPage({
                         </p>
                       ) : null}
 
-                      {dayPay >
-                      0 ? (
-                        <div className="mt-3 border-t border-zinc-200 pt-2">
-                          <p className="text-sm font-bold text-zinc-950">
-                            Extras £
-                            {dayPay.toFixed(
-                              2,
-                            )}
+                      <div className="mt-3 border-t border-zinc-100 pt-2.5">
+                        {dayPay > 0 ? (
+                          <>
+                            <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-400">
+                              Extras
+                            </p>
+
+                            <p className="mt-0.5 text-base font-bold text-zinc-950">
+                              £
+                              {dayPay.toFixed(
+                                2,
+                              )}
+                            </p>
+                          </>
+                        ) : shifts.length >
+                          0 ? (
+                          <p className="text-xs font-medium text-zinc-400">
+                            Scheduled work
                           </p>
-                        </div>
-                      ) : null}
+                        ) : (
+                          <p className="text-xs text-zinc-300">
+                            No activity
+                          </p>
+                        )}
+                      </div>
                     </Link>
                   );
                 },
@@ -894,28 +1033,64 @@ export default async function CalendarPage({
           </section>
         </div>
 
-        <div className="mt-3 flex flex-wrap gap-4 text-xs font-medium text-zinc-500">
-          <span className="flex items-center gap-2">
-            <span className="size-3 rounded bg-blue-100" />
-            Scheduled shift
-          </span>
+        <div className="mt-4 flex flex-wrap gap-x-5 gap-y-3 rounded-2xl bg-white px-4 py-3 text-xs font-medium text-zinc-600 shadow-sm">
+          <Legend
+            className={colours.shift}
+            label="Whole-time shift"
+          />
 
-          <span className="flex items-center gap-2">
-            <Flame className="size-3.5 text-red-600" />
-            Fire call
-          </span>
+          <Legend
+            className={colours.call}
+            label="Fire call"
+          />
 
-          <span className="flex items-center gap-2">
-            <Clock3 className="size-3.5" />
-            Overtime
-          </span>
+          <Legend
+            className={
+              colours.overtime
+            }
+            label="Overtime"
+          />
 
-          <span className="flex items-center gap-2">
-            <Star className="size-3.5 text-amber-600" />
-            Bank holiday
-          </span>
+          <Legend
+            className={
+              colours.training
+            }
+            label="Drill / course"
+          />
+
+          <Legend
+            className={
+              colours.standby
+            }
+            label="Standby"
+          />
+
+          <Legend
+            className={
+              colours.holiday
+            }
+            label="Bank holiday"
+          />
         </div>
       </div>
     </main>
+  );
+}
+
+function Legend({
+  className,
+  label,
+}: {
+  className: string;
+  label: string;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <span
+        className={`size-3 rounded ${className}`}
+      />
+
+      {label}
+    </div>
   );
 }
