@@ -54,3 +54,29 @@ button {
 ::selection {
   background: rgba(220, 38, 38, 0.18);
 }
+
+.input {
+  width: 100%;
+  min-height: 3rem;
+  border-radius: 1rem;
+  border: 1px solid #e4e4e7;
+  background: #fafafa;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  color: #18181b;
+  outline: none;
+  transition:
+    border-color 150ms ease,
+    background-color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.input::placeholder {
+  color: #a1a1aa;
+}
+
+.input:focus {
+  border-color: #ef4444;
+  background: #ffffff;
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1);
+}

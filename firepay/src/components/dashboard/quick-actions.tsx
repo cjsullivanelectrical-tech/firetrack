@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {
   Banknote,
   CarFront,
@@ -8,12 +9,36 @@ import {
 } from "lucide-react";
 
 const actions = [
-  { label: "Call", icon: Flame },
-  { label: "Overtime", icon: Banknote },
-  { label: "Drill", icon: GraduationCap },
-  { label: "Standby", icon: Radio },
-  { label: "Mileage", icon: CarFront },
-  { label: "Other", icon: Plus },
+  {
+    label: "Call",
+    icon: Flame,
+    href: "/entries/new?type=call",
+  },
+  {
+    label: "Overtime",
+    icon: Banknote,
+    href: "/entries/new?type=overtime",
+  },
+  {
+    label: "Drill",
+    icon: GraduationCap,
+    href: "/entries/new?type=drill",
+  },
+  {
+    label: "Standby",
+    icon: Radio,
+    href: "/entries/new?type=standby",
+  },
+  {
+    label: "Mileage",
+    icon: CarFront,
+    href: "/entries/new?type=mileage",
+  },
+  {
+    label: "Other",
+    icon: Plus,
+    href: "/entries/new?type=other",
+  },
 ];
 
 export function QuickActions() {
@@ -34,17 +59,17 @@ export function QuickActions() {
           const Icon = action.icon;
 
           return (
-            <button
+            <Link
               key={action.label}
-              type="button"
+              href={action.href}
               className="group flex min-h-24 flex-col items-center justify-center gap-2 rounded-[1.5rem] border border-zinc-200 bg-white p-3 text-sm font-semibold text-zinc-700 shadow-sm transition hover:-translate-y-0.5 hover:border-red-200 hover:text-red-600 hover:shadow-md"
             >
               <span className="flex size-10 items-center justify-center rounded-2xl bg-zinc-100 text-zinc-700 transition group-hover:bg-red-50 group-hover:text-red-600">
-                <Icon aria-hidden="true" className="size-5" />
+                <Icon className="size-5" />
               </span>
 
               {action.label}
-            </button>
+            </Link>
           );
         })}
       </div>

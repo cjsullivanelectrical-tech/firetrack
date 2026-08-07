@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {
   CalendarDays,
   ChartNoAxesCombined,
@@ -7,11 +8,32 @@ import {
 } from "lucide-react";
 
 const navigationItems = [
-  { label: "Home", icon: House, active: true },
-  { label: "Calendar", icon: CalendarDays, active: false },
-  { label: "Add", icon: Plus, active: false, prominent: true },
-  { label: "Reports", icon: ChartNoAxesCombined, active: false },
-  { label: "Profile", icon: CircleUserRound, active: false },
+  {
+    label: "Home",
+    icon: House,
+    href: "/",
+  },
+  {
+    label: "Calendar",
+    icon: CalendarDays,
+    href: "/calendar",
+  },
+  {
+    label: "Add",
+    icon: Plus,
+    href: "/entries/new",
+    prominent: true,
+  },
+  {
+    label: "Reports",
+    icon: ChartNoAxesCombined,
+    href: "/reports",
+  },
+  {
+    label: "Profile",
+    icon: CircleUserRound,
+    href: "/settings/positions",
+  },
 ];
 
 export function MobileNavigation() {
@@ -26,9 +48,9 @@ export function MobileNavigation() {
 
           if (item.prominent) {
             return (
-              <button
+              <Link
                 key={item.label}
-                type="button"
+                href={item.href}
                 className="flex flex-col items-center gap-1 text-xs font-medium text-zinc-500"
               >
                 <span className="-mt-7 flex size-14 items-center justify-center rounded-full border-4 border-zinc-100 bg-red-600 text-white shadow-lg">
@@ -36,21 +58,19 @@ export function MobileNavigation() {
                 </span>
 
                 <span>{item.label}</span>
-              </button>
+              </Link>
             );
           }
 
           return (
-            <button
+            <Link
               key={item.label}
-              type="button"
-              className={`flex min-h-14 flex-col items-center justify-center gap-1 text-xs font-medium ${
-                item.active ? "text-red-600" : "text-zinc-500"
-              }`}
+              href={item.href}
+              className="flex min-h-14 flex-col items-center justify-center gap-1 text-xs font-medium text-zinc-500"
             >
               <Icon className="size-5" />
               <span>{item.label}</span>
-            </button>
+            </Link>
           );
         })}
       </div>
