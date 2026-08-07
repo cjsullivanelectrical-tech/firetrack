@@ -25,6 +25,7 @@ import { getLondonDate } from "@/lib/date";
 
 type Props = {
   replay?: boolean;
+  sandbox?: boolean;
 };
 
 type EmploymentChoice =
@@ -82,6 +83,7 @@ const competenceOptions: Record<
 
 export function OnboardingForm({
   replay = false,
+  sandbox = false,
 }: Props) {
   const router = useRouter();
   const supabase = createClient();
@@ -208,6 +210,13 @@ export function OnboardingForm({
   }
 
   async function finish() {
+    if (sandbox) {
+      router.push(
+        "/developer/sandbox/dashboard",
+      );
+      return;
+    }
+
     if (replay) {
       router.push("/developer");
       return;
@@ -407,8 +416,15 @@ export function OnboardingForm({
       createdPositions[0];
 
     if (first) {
+      /*
+       * setup=1 tells us this is a first-run setup.
+       * setupSection=rota makes the next intention clear.
+       *
+       * The role page contains the detailed pay and rota
+       * editor, which is where complex shift cycles belong.
+       */
       router.replace(
-        `/settings/positions/${first.id}?setup=1`,
+        `/settings/positions/${first.id}?setup=1&setupSection=rota`,
       );
     } else {
       router.replace("/");
@@ -600,16 +616,22 @@ export function OnboardingForm({
           >
             {saving
               ? "Setting up..."
-              : replay
-                ? "Finish preview"
-                : "Create my FirePay setup"}
+              : sandbox
+                ? "Finish setup & view dashboard"
+                : replay
+                  ? "Finish preview"
+                  : "Create setup & configure rota"}
 
             <ArrowRight className="size-5" />
           </button>
         )}
       </div>
 
-      {replay ? (
+      {sandbox ? (
+        <p className="mt-4 text-center text-xs font-medium text-violet-600">
+          Sandbox mode — this setup is temporary and will not alter your real FirePay account.
+        </p>
+      ) : replay ? (
         <p className="mt-4 text-center text-xs font-medium text-amber-600">
           Developer preview — nothing entered here will be saved.
         </p>
@@ -1227,7 +1249,7 @@ function RotaPreview({
 
       {rotaType === "cycle" ? (
         <p className="mt-3 text-xs leading-5 text-zinc-500">
-          This is only a preview. FirePay will take you to the full cycle editor next so you can enter 24-hour, 2-2-4, day/night or other patterns accurately.
+          This is only a preview. After you finish this wizard, FirePay will open this role's detailed settings where you can build the exact cycle — including 24-hour, day/night and other patterns.
         </p>
       ) : null}
     </div>

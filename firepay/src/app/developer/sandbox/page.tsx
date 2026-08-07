@@ -43,7 +43,7 @@ export default function DeveloperSandboxPage() {
           </div>
 
           <Link
-            href="/onboarding?replay=1"
+            href="/onboarding?replay=1&sandbox=1"
             className="mt-6 flex h-14 items-center justify-center gap-2 rounded-2xl bg-red-600 font-semibold text-white"
           >
             <Play className="size-5" />
