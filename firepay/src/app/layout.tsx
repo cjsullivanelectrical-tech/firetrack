@@ -8,13 +8,23 @@ const geist = Geist({
 });
 
 export const metadata: Metadata = {
+  applicationName: "FirePay",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    title: "FirePay",
+    statusBarStyle: "default",
+  },
+  formatDetection: {
+    telephone: false,
+  },
+
   title: {
     default: "FirePay",
     template: "%s | FirePay",
   },
   description:
     "Track firefighter calls, overtime, training and earnings accurately.",
-  applicationName: "FirePay",
 };
 
 export const viewport: Viewport = {
