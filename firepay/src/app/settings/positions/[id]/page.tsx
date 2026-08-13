@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { ContractStatusButton } from "@/components/positions/contract-status-button";
 import { PayPackageManager } from "@/components/pay/pay-package-manager";
 
 type Props = {
@@ -107,6 +108,23 @@ export default async function PositionPayPage({
           }
           initialRotaDays={rotaDays}
         />
+        <section className="mt-8 rounded-[2rem] border border-zinc-200 bg-white p-5 shadow-sm sm:p-7">
+          <h2 className="text-lg font-bold text-zinc-950">
+            Contract status
+          </h2>
+
+          <p className="mt-2 text-sm leading-6 text-zinc-500">
+            Suspending a contract keeps all historical activity and pay records, but stops FirePay using it for current rota and earnings calculations.
+          </p>
+
+          <div className="mt-5">
+            <ContractStatusButton
+              positionId={position.id}
+              isActive={Boolean(position.is_active)}
+            />
+          </div>
+        </section>
+
       </div>
     </main>
   );
