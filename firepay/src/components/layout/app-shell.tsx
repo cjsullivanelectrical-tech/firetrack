@@ -45,6 +45,11 @@ const desktopNavigation = [
     href: "/reports",
   },
   {
+    label: "Expected Pay",
+    icon: ChartNoAxesCombined,
+    href: "/expected-pay",
+  },
+  {
     label: "My roles",
     icon: CircleUserRound,
     href: "/settings/positions",
