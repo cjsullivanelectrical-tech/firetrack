@@ -129,30 +129,6 @@ export function EntryForm({ initialType, positions }: Props) {
     setBankHolidayMultiplier,
   ] = useState(2);
 
-  const [
-    drillPayMode,
-    setDrillPayMode,
-  ] = useState<
-    | "normal_hourly"
-    | "custom_hourly"
-    | "fixed"
-    | "none"
-  >("normal_hourly");
-
-  const [
-    drillHourlyRate,
-    setDrillHourlyRate,
-  ] = useState<number | null>(
-    null,
-  );
-
-  const [
-    drillFixedPayment,
-    setDrillFixedPayment,
-  ] = useState<number | null>(
-    null,
-  );
-
   const [basicRate, setBasicRate] = useState<number | null>(null);
   const [overtimeRate, setOvertimeRate] = useState<number | null>(null);
   const [disturbanceRate, setDisturbanceRate] =
@@ -205,9 +181,7 @@ export function EntryForm({ initialType, positions }: Props) {
 
       const { data } = await supabase
         .from("position_pay_packages")
-        .select(
-          "bank_holiday_multiplier,drill_pay_mode,drill_hourly_rate,drill_fixed_payment",
-        )
+        .select("bank_holiday_multiplier")
         .eq(
           "position_id",
           selectedPosition.id,
@@ -219,39 +193,6 @@ export function EntryForm({ initialType, positions }: Props) {
           data?.bank_holiday_multiplier ??
             2,
         ),
-      );
-
-      setDrillPayMode(
-        data?.drill_pay_mode ===
-          "custom_hourly" ||
-        data?.drill_pay_mode ===
-          "fixed" ||
-        data?.drill_pay_mode ===
-          "none"
-          ? data.drill_pay_mode
-          : "normal_hourly",
-      );
-
-      setDrillHourlyRate(
-        data?.drill_hourly_rate ===
-          null ||
-        data?.drill_hourly_rate ===
-          undefined
-          ? null
-          : Number(
-              data.drill_hourly_rate,
-            ),
-      );
-
-      setDrillFixedPayment(
-        data?.drill_fixed_payment ===
-          null ||
-        data?.drill_fixed_payment ===
-          undefined
-          ? null
-          : Number(
-              data.drill_fixed_payment,
-            ),
       );
     }
 
@@ -365,36 +306,6 @@ export function EntryForm({ initialType, positions }: Props) {
       return 0;
     }
 
-    if (
-      entryType === "drill"
-    ) {
-      if (
-        drillPayMode === "none"
-      ) {
-        return 0;
-      }
-
-      if (
-        drillPayMode === "fixed"
-      ) {
-        return Number(
-          drillFixedPayment ?? 0,
-        );
-      }
-
-      if (
-        drillPayMode ===
-        "custom_hourly"
-      ) {
-        return (
-          (workedMinutes / 60) *
-          Number(
-            drillHourlyRate ?? 0,
-          )
-        );
-      }
-    }
-
     if (!effectiveRate) return 0;
 
     let amount =
@@ -423,9 +334,6 @@ export function EntryForm({ initialType, positions }: Props) {
     disturbanceRate,
     generatesExtraPay,
     dayStatus,
-    drillPayMode,
-    drillHourlyRate,
-    drillFixedPayment,
   ]);
 
   async function saveEntry(
@@ -507,17 +415,7 @@ export function EntryForm({ initialType, positions }: Props) {
       worked_minutes: timeBased ? workedMinutes : 0,
 
       rate_of_pay:
-        entryType === "drill" &&
-        drillPayMode ===
-          "custom_hourly"
-          ? drillHourlyRate
-          : entryType === "drill" &&
-              drillPayMode ===
-                "fixed"
-            ? null
-            : timeBased
-              ? effectiveRate
-              : null,
+        timeBased ? effectiveRate : null,
 
       rate_multiplier:
         entryType === "overtime" &&
@@ -945,43 +843,6 @@ export function EntryForm({ initialType, positions }: Props) {
         {errorMessage ? (
           <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700">
             {errorMessage}
-          </div>
-        ) : null}
-
-        {entryType === "drill" ? (
-          <div className="rounded-2xl border border-violet-200 bg-violet-50 p-4">
-            <p className="font-semibold text-violet-900">
-              Drill Night pay
-            </p>
-
-            <p className="mt-1 text-sm leading-6 text-violet-700">
-              FirePay is using the Drill Night pay rule saved against this role.
-            </p>
-
-            <div className="mt-3 rounded-xl bg-white/70 p-3 text-sm font-semibold text-violet-900">
-              {drillPayMode === "normal_hourly"
-                ? "Normal hourly rate"
-                : drillPayMode === "custom_hourly"
-                  ? `£${Number(
-                      drillHourlyRate ?? 0,
-                    ).toFixed(2)}/hour`
-                  : drillPayMode === "fixed"
-                    ? `£${Number(
-                        drillFixedPayment ?? 0,
-                      ).toFixed(2)} per drill`
-                    : "No additional pay"}
-            </div>
-
-            <a
-              href={
-                selectedPosition
-                  ? `/settings/positions/${selectedPosition.id}`
-                  : "/settings/positions"
-              }
-              className="mt-3 inline-flex text-sm font-semibold text-violet-700 underline"
-            >
-              Change Drill Night pay rule
-            </a>
           </div>
         ) : null}
 

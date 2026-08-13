@@ -44,9 +44,6 @@ type PayPackage = {
 
   custom_retainer_annual?: number | null;
   bank_holiday_multiplier?: number | null;
-  drill_pay_mode?: string | null;
-  drill_hourly_rate?: number | null;
-  drill_fixed_payment?: number | null;
 };
 
 type Allowance = {
@@ -205,37 +202,6 @@ export function PayPackageManager({
       initialPayPackage
         ?.bank_holiday_multiplier ??
         2,
-    ),
-  );
-
-  const [
-    drillPayMode,
-    setDrillPayMode,
-  ] = useState(
-    initialPayPackage
-      ?.drill_pay_mode ??
-      "normal_hourly",
-  );
-
-  const [
-    drillHourlyRate,
-    setDrillHourlyRate,
-  ] = useState(
-    String(
-      initialPayPackage
-        ?.drill_hourly_rate ??
-        "",
-    ),
-  );
-
-  const [
-    drillFixedPayment,
-    setDrillFixedPayment,
-  ] = useState(
-    String(
-      initialPayPackage
-        ?.drill_fixed_payment ??
-        "",
     ),
   );
 
@@ -500,27 +466,6 @@ export function PayPackageManager({
         Number(
           bankHolidayMultiplier || 1,
         ),
-
-      drill_pay_mode:
-        drillPayMode,
-
-      drill_hourly_rate:
-        drillPayMode ===
-          "custom_hourly" &&
-        drillHourlyRate
-          ? Number(
-              drillHourlyRate,
-            )
-          : null,
-
-      drill_fixed_payment:
-        drillPayMode ===
-          "fixed" &&
-        drillFixedPayment
-          ? Number(
-              drillFixedPayment,
-            )
-          : null,
     };
 
     const { error: payError } = await supabase
@@ -1492,172 +1437,6 @@ export function PayPackageManager({
           </section>
         </>
       )}
-
-      <section className="rounded-[2rem] border border-zinc-200 bg-white p-5 shadow-sm sm:p-8">
-        <h2 className="text-xl font-bold text-zinc-950">
-          Drill Night pay
-        </h2>
-
-        <p className="mt-1 text-sm leading-6 text-zinc-500">
-          Only configure this if Drill Nights generate separate pay for this role.
-        </p>
-
-        <div className="mt-5 grid gap-3 sm:grid-cols-2">
-          <button
-            type="button"
-            onClick={() =>
-              setDrillPayMode(
-                "normal_hourly",
-              )
-            }
-            className={`rounded-2xl border p-4 text-left ${
-              drillPayMode ===
-              "normal_hourly"
-                ? "border-violet-400 bg-violet-50"
-                : "border-zinc-200 bg-white"
-            }`}
-          >
-            <p className="font-semibold text-zinc-950">
-              Normal hourly rate
-            </p>
-
-            <p className="mt-1 text-xs text-zinc-500">
-              Pay Drill Night using this role&apos;s standard hourly rate.
-            </p>
-          </button>
-
-          <button
-            type="button"
-            onClick={() =>
-              setDrillPayMode(
-                "custom_hourly",
-              )
-            }
-            className={`rounded-2xl border p-4 text-left ${
-              drillPayMode ===
-              "custom_hourly"
-                ? "border-violet-400 bg-violet-50"
-                : "border-zinc-200 bg-white"
-            }`}
-          >
-            <p className="font-semibold text-zinc-950">
-              Different hourly rate
-            </p>
-
-            <p className="mt-1 text-xs text-zinc-500">
-              Use a separate rate specifically for Drill Nights.
-            </p>
-          </button>
-
-          <button
-            type="button"
-            onClick={() =>
-              setDrillPayMode(
-                "fixed",
-              )
-            }
-            className={`rounded-2xl border p-4 text-left ${
-              drillPayMode ===
-              "fixed"
-                ? "border-violet-400 bg-violet-50"
-                : "border-zinc-200 bg-white"
-            }`}
-          >
-            <p className="font-semibold text-zinc-950">
-              Fixed payment
-            </p>
-
-            <p className="mt-1 text-xs text-zinc-500">
-              One fixed amount each time a Drill Night is recorded.
-            </p>
-          </button>
-
-          <button
-            type="button"
-            onClick={() =>
-              setDrillPayMode(
-                "none",
-              )
-            }
-            className={`rounded-2xl border p-4 text-left ${
-              drillPayMode ===
-              "none"
-                ? "border-violet-400 bg-violet-50"
-                : "border-zinc-200 bg-white"
-            }`}
-          >
-            <p className="font-semibold text-zinc-950">
-              No additional pay
-            </p>
-
-            <p className="mt-1 text-xs text-zinc-500">
-              Record Drill Nights for your log, but add £0 extra.
-            </p>
-          </button>
-        </div>
-
-        {drillPayMode ===
-        "custom_hourly" ? (
-          <div className="mt-5 max-w-xs">
-            <Field label="Drill Night hourly rate">
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400">
-                  £
-                </span>
-
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={
-                    drillHourlyRate
-                  }
-                  onChange={(event) =>
-                    setDrillHourlyRate(
-                      event.target.value,
-                    )
-                  }
-                  className="input pl-8"
-                  placeholder="0.00"
-                />
-              </div>
-            </Field>
-          </div>
-        ) : null}
-
-        {drillPayMode ===
-        "fixed" ? (
-          <div className="mt-5 max-w-xs">
-            <Field label="Payment per Drill Night">
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400">
-                  £
-                </span>
-
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={
-                    drillFixedPayment
-                  }
-                  onChange={(event) =>
-                    setDrillFixedPayment(
-                      event.target.value,
-                    )
-                  }
-                  className="input pl-8"
-                  placeholder="0.00"
-                />
-              </div>
-            </Field>
-          </div>
-        ) : null}
-
-        <div className="mt-5 rounded-2xl bg-violet-50 p-4 text-sm leading-6 text-violet-800">
-          When a Drill Night is recorded, FirePay will calculate it using this rule and include it automatically in recorded and expected earnings.
-        </div>
-      </section>
 
       <section className="rounded-[2rem] border border-zinc-200 bg-white p-5 shadow-sm sm:p-8">
         <h2 className="text-xl font-bold text-zinc-950">
