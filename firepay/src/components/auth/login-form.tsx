@@ -107,6 +107,15 @@ export function LoginForm() {
         </div>
       ) : null}
 
+      <div className="flex justify-end">
+        <Link
+          href="/forgot-password"
+          className="text-sm font-semibold text-red-600"
+        >
+          Forgot your password?
+        </Link>
+      </div>
+
       <button
         type="submit"
         disabled={isSubmitting}

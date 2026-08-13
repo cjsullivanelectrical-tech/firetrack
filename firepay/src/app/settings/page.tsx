@@ -1,16 +1,21 @@
 import Link from "next/link";
 import {
   ArrowLeft,
+  Banknote,
   CalendarDays,
   ChevronRight,
   CircleUserRound,
+  HeartPulse,
+  Info,
+  KeyRound,
   MessageSquareText,
+  ShieldCheck,
   UserRound,
 } from "lucide-react";
 import { redirect } from "next/navigation";
 
-import { createClient } from "@/lib/supabase/server";
 import { DeveloperUnlock } from "@/components/developer/developer-unlock";
+import { createClient } from "@/lib/supabase/server";
 
 export default async function SettingsPage() {
   const supabase =
@@ -52,47 +57,135 @@ export default async function SettingsPage() {
           </h1>
 
           <p className="mt-2 text-sm text-zinc-500">
-            Manage your account, roles, rota and FirePay preferences.
+            Manage your account, work setup and FirePay preferences.
           </p>
         </div>
 
-        <div className="mt-8 space-y-4">
+        <SettingsSection
+          title="Account"
+          className="mt-8"
+        >
           <SettingsLink
             href="/settings/profile"
             title="Profile"
-            description="Name and account details"
+            description="Name and personal details"
             icon={UserRound}
             iconClass="bg-red-50 text-red-600"
           />
 
           <SettingsLink
+            href="/settings/security"
+            title="Login & Security"
+            description="Password, reset email and account sessions"
+            icon={KeyRound}
+            iconClass="bg-zinc-100 text-zinc-700"
+          />
+        </SettingsSection>
+
+        <SettingsSection
+          title="Work"
+          className="mt-8"
+        >
+          <SettingsLink
             href="/settings/positions"
-            title="My roles & contracts"
-            description="Whole-time, on-call, rank, pay and rota"
+            title="My Roles & Contracts"
+            description="Whole-time, On-call, rank, pay and rota"
             icon={CircleUserRound}
             iconClass="bg-blue-50 text-blue-600"
           />
 
           <SettingsLink
-            href="/settings/calendar"
-            title="Calendar appearance"
-            description="Choose your calendar colours and style"
-            icon={CalendarDays}
-            iconClass="bg-amber-50 text-amber-600"
+            href="/expected-pay"
+            title="Expected Pay"
+            description="Expected gross earnings and setup confidence"
+            icon={Banknote}
+            iconClass="bg-emerald-50 text-emerald-600"
           />
 
           <SettingsLink
+            href="/leave"
+            title="Leave & Sickness"
+            description="Annual leave and sickness date ranges"
+            icon={HeartPulse}
+            iconClass="bg-violet-50 text-violet-600"
+          />
+        </SettingsSection>
+
+        <SettingsSection
+          title="FirePay"
+          className="mt-8"
+        >
+          <SettingsLink
+            href="/settings/calendar"
+            title="Calendar Appearance"
+            description="Colours and calendar style"
+            icon={CalendarDays}
+            iconClass="bg-amber-50 text-amber-600"
+          />
+        </SettingsSection>
+
+        <SettingsSection
+          title="Support"
+          className="mt-8"
+        >
+          <SettingsLink
             href="/feedback"
-            title="Send feedback"
+            title="Send Feedback"
             description="Tell us what is confusing, wrong or missing"
             icon={MessageSquareText}
             iconClass="bg-emerald-50 text-emerald-600"
           />
 
-          <DeveloperUnlock />
+          <SettingsLink
+            href="/about"
+            title="About FirePay"
+            description="Version, beta status and important information"
+            icon={Info}
+            iconClass="bg-zinc-100 text-zinc-700"
+          />
+        </SettingsSection>
+
+        <div className="mt-8 rounded-[1.5rem] border border-amber-200 bg-amber-50 p-5">
+          <div className="flex items-start gap-3">
+            <ShieldCheck className="mt-0.5 size-5 text-amber-700" />
+
+            <div>
+              <p className="font-semibold text-amber-950">
+                FirePay Beta
+              </p>
+
+              <p className="mt-1 text-sm leading-6 text-amber-800">
+                Pay figures are estimates and should always be checked against official payroll information.
+              </p>
+            </div>
+          </div>
         </div>
+
+        <DeveloperUnlock />
       </div>
     </main>
+  );
+}
+
+function SettingsSection({
+  title,
+  children,
+  className = "",
+}: {
+  title: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <section className={className}>
+      <p className="mb-3 px-1 text-xs font-bold uppercase tracking-wider text-zinc-400">
+        {title}
+      </p>
+
+      <div className="space-y-3">
+        {children}
+      </div>
+    </section>
   );
 }
 
@@ -114,14 +207,14 @@ function SettingsLink({
       href={href}
       className="flex items-center justify-between gap-4 rounded-[1.75rem] border border-zinc-200 bg-white p-5 shadow-sm transition hover:border-zinc-300"
     >
-      <div className="flex items-center gap-4">
+      <div className="flex min-w-0 items-center gap-4">
         <div
-          className={`flex size-11 items-center justify-center rounded-2xl ${iconClass}`}
+          className={`flex size-11 shrink-0 items-center justify-center rounded-2xl ${iconClass}`}
         >
           <Icon className="size-5" />
         </div>
 
-        <div>
+        <div className="min-w-0">
           <p className="font-bold text-zinc-950">
             {title}
           </p>
@@ -132,7 +225,7 @@ function SettingsLink({
         </div>
       </div>
 
-      <ChevronRight className="size-5 text-zinc-300" />
+      <ChevronRight className="size-5 shrink-0 text-zinc-300" />
     </Link>
   );
 }
