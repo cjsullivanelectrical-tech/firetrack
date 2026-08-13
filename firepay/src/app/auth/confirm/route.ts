@@ -32,9 +32,15 @@ export async function GET(
   let next =
     requestUrl.searchParams.get(
       "next",
-    ) ?? "/onboarding";
+    );
 
-  // Prevent redirecting to an external URL.
+  if (!next) {
+    next =
+      type === "recovery"
+        ? "/reset-password"
+        : "/onboarding";
+  }
+
   if (!next.startsWith("/")) {
     next = "/onboarding";
   }
@@ -42,12 +48,6 @@ export async function GET(
   const supabase =
     await createClient();
 
-  /*
-   * PKCE flow.
-   *
-   * @supabase/ssr uses PKCE by default.
-   * Supabase redirects here with ?code=...
-   */
   if (code) {
     const { error } =
       await supabase.auth
@@ -70,13 +70,6 @@ export async function GET(
     );
   }
 
-  /*
-   * Token-hash flow.
-   *
-   * Keep this so FirePay also works
-   * if we later customise Supabase's
-   * confirmation email template.
-   */
   if (tokenHash && type) {
     const { error } =
       await supabase.auth.verifyOtp({
